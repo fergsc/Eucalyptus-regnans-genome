@@ -1,0 +1,30 @@
+# setup
+label="hap1"
+genome="/path/XXX.fasta"
+reads="/lpath/example.fastq.gz"
+threads=8
+memory="XXG"
+ncbiDB="/path/nt"
+mimimap2Param="map-hifi"
+
+# align reads to genome
+minimap2 -t $threads -ax $mimimap2Param $genome $reads  \
+    | samtools sort -m $memory -@ $threads              \
+    > sorted_mapped_reads.bam
+samtools index -@ $threads sorted_mapped_reads.bam
+
+
+# blast genome
+blastn -query $genome -db $ncbiDB -outfmt "6 qseqid staxids bitscore std" -max_target_seqs 10 -max_hsps 1 -evalue 1e-25 -out ${label}.out
+
+# analyse blast ouput with blobtools
+blobtools create -i $genome -b sorted_mapped_reads.bam -t ${label}.out -o contamination
+blobtools plot -i contamination.blobDB.json -o blobP
+blobtools view -i contamination.blobDB.json -o blobV
+
+# remove contamination contigs
+# you may need to modify the tax classes to remove/keep
+grep -v '^#' blobV.contamination.blobDB.table.txt | grep -vE 'Bacteroidetes|Ascomycota|Proteobacteria|Arthropoda' | awk '{print \$1}' > keep.lst
+grep -v '^#' blobV.contamination.blobDB.table.txt | grep -E 'Bacteroidetes|Ascomycota|Proteobacteria|Arthropoda'  | awk '{print \$1}' > contaminant.lst
+seqtk subseq $genome keep.lst > keep.fasta
+seqtk subseq $genome contaminant.lst > contamination.fasta
