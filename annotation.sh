@@ -1,5 +1,23 @@
-genome="/path/XXX.fasta"
-trainingData="" # in proteins
+genome="/path to genome/genome.fasta"
+cpus=XX
+
+### annotate repeats and TEs
+mkdir repeats repeats/EDTA
+cd repeats/EDTA
+EDTA.pl --genome $genome --anno 1 --threads $cpus
+cd ../
+RepeatMasker -pa $cpus -s -lib EDTA/$(basename $genome).mod.EDTA.TElib.fa -dir repeatMask -e ncbi $genome
+
+cd ../
+sed -e '1,3d' repeats/$(basename $genome).out | awk -v OFS='\t' '{print $5, $6-1, $7}' | sort -k1,1 -k2,2 -V > $(basename $genome).bed
+
+### soft mask repeats
+bedtools maskfasta -soft -fi $genome -bed ${label}.bed -fo ${label}-softMasked.fasta
+
+
+### BRAKER# - annotate for genes
+genome="$(pwd/${label}-softMasked.fasta)"
+trainingData="" # fasta of proteins
 threads=12
 workingDir="./"
 
