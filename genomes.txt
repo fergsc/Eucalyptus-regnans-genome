@@ -1,0 +1,6 @@
+##ft    =   File type (fa:fasta/cl:chromosome_length, default = fa. cl files are fasters)
+##lc    =       line colour
+##lw    =       line width
+#file   name    tags
+hap1.genome     hap1    ft:cl;lw:2.5
+hap2.genome     hap2    ft:cl;lw:2.5
